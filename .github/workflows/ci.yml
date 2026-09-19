@@ -11,6 +11,10 @@ on:
     branches:
       - main
       - develop
+ 
+permissions:
+  contents: read
+  id-token: write
 
 jobs:
   test:
@@ -49,3 +53,29 @@ jobs:
           docker build \
             -t ecommerce-backend:${{ github.sha }} \
             ./backend
+
+      # AWS authentication and ECR push happen only on develop
+      - name: Configure AWS credentials
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        uses: aws-actions/configure-aws-credentials@v5
+        with:
+          role-to-assume: arn:aws:iam::303164492950:role/ecommerce-devops-github-actions
+          aws-region: ap-south-1
+
+      - name: Login to Amazon ECR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Tag Docker image
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        run: |
+          docker tag \
+            ecommerce-backend:${{ github.sha }} \
+            303164492950.dkr.ecr.ap-south-1.amazonaws.com/ecommerce-devops-backend:${{ github.sha }}
+
+      - name: Push Docker image to ECR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+        run: |
+          docker push \
+            303164492950.dkr.ecr.ap-south-1.amazonaws.com/ecommerce-devops-backend:${{ github.sha }}
