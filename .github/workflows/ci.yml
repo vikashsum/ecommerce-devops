@@ -12,6 +12,9 @@ on:
       - main
       - develop
 
+# Permissions required by GitHub Actions.
+# id-token: write allows GitHub Actions to request
+# an OIDC token for AWS authentication.
 permissions:
   contents: read
   id-token: write
@@ -42,9 +45,17 @@ jobs:
         run: |
           python -m pytest -v
 
+  # --------------------------------------------------
+  # Build and push Docker image to Amazon ECR
+  #
+  # This job runs ONLY when code is pushed directly
+  # to the develop branch.
+  # --------------------------------------------------
   docker-build-push:
     runs-on: ubuntu-latest
     needs: test
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
 
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
 
@@ -52,6 +63,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v7
 
+      # GitHub OIDC -> AWS STS -> IAM Role
+      # No long-lived AWS access keys are stored in GitHub.
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v5
         with:
