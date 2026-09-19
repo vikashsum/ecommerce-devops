@@ -16,6 +16,10 @@ permissions:
   contents: read
   id-token: write
 
+permissions:
+  contents: read
+  id-token: write
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -40,42 +44,32 @@ jobs:
         working-directory: backend
         run: python -m pytest -v
 
-  docker-build:
+  docker-build-push:
     runs-on: ubuntu-latest
     needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
 
-      - name: Build Docker image
-        run: |
-          docker build \
-            -t ecommerce-backend:${{ github.sha }} \
-            ./backend
-
-      # AWS authentication and ECR push happen only on develop
       - name: Configure AWS credentials
-        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
         uses: aws-actions/configure-aws-credentials@v5
         with:
           role-to-assume: arn:aws:iam::303164492950:role/ecommerce-devops-github-actions
           aws-region: ap-south-1
 
       - name: Login to Amazon ECR
-        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Tag Docker image
-        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
+      - name: Build Docker image
         run: |
-          docker tag \
-            ecommerce-backend:${{ github.sha }} \
-            303164492950.dkr.ecr.ap-south-1.amazonaws.com/ecommerce-devops-backend:${{ github.sha }}
+          docker build \
+            -t ${{ steps.login-ecr.outputs.registry }}/ecommerce-devops-backend:${{ github.sha }} \
+            ./backend
 
       - name: Push Docker image to ECR
-        if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
         run: |
           docker push \
-            303164492950.dkr.ecr.ap-south-1.amazonaws.com/ecommerce-devops-backend:${{ github.sha }}
+            ${{ steps.login-ecr.outputs.registry }}/ecommerce-devops-backend:${{ github.sha }}

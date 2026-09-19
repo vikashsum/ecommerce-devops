@@ -103,7 +103,7 @@ resource "aws_iam_role" "github_actions" {
           StringEquals = {
             "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
 
-            "token.actions.githubusercontent.com:sub" = "repo:vikashsum@241154818/ecommerce-devops@1375722798:ref:refs/heads/develop"
+            "token.actions.githubusercontent.com:sub" = "repo:vikashsum/ecommerce-devops:ref:refs/heads/develop"
           }
         }
       }
