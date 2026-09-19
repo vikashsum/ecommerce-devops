@@ -22,3 +22,8 @@ output "private_subnet_2_id" {
   description = "ID of the private subnet 2"
   value       = aws_subnet.private_2.id
 }
+
+output "ecr_repository_url" {
+  description = "ECR repository URL for the backend image"
+  value       = aws_ecr_repository.backend.repository_url
+}
