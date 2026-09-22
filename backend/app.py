@@ -11,7 +11,7 @@ products = [
 
 @app.route("/health")
 def health():
-    return jsonify({"status": "healthy"})
+    return jsonify({"status": "healthy", "version": "v2"})
 
 
 @app.route("/products")
